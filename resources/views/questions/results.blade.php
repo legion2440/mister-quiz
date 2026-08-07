@@ -4,8 +4,7 @@
 
 <a class="top-left-corner blue-btn" href="{{ route('profile') }}"> {{auth()->user()->username}} </a>
 
-<a class="top-right-corner blue-btn" href="{{ route('home') }}">
-    < Home</a>
+<a class="top-right-corner blue-btn" href="{{ route('home') }}">Home</a>
 
         <div class="center text-center content">
             <div>
