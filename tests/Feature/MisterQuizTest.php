@@ -19,6 +19,12 @@ class MisterQuizTest extends TestCase
         $this->seed();
     }
 
+    public function testTestsUseInMemorySqliteDatabase()
+    {
+        $this->assertSame('sqlite', config('database.default'));
+        $this->assertSame(':memory:', config('database.connections.sqlite.database'));
+    }
+
     public function testGuestAndAuthenticatedMenusMatchTheAudit()
     {
         $this->get(route('home'))

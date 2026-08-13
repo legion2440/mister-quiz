@@ -13,7 +13,6 @@ class CreateQuizTable extends Migration
      */
     public function up()
     {
-        Schema::dropIfExists('quizzes');
         Schema::create('quizzes', function (Blueprint $table) {
             $table->id();
             $table->boolean('completed');

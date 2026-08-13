@@ -1,10 +1,10 @@
-@props(['question'=>$question])
+@props(['question'])
 
 <div class="mb4">
     <p class="center title question-title">{{ $question->question }}</p>
     <p class="center question-meta">{{ $question->category }} | {{ $question->xp }} XP</p>
 
-    <div class="checkboxes-wrapper" class="center">
+    <div class="checkboxes-wrapper">
         @foreach ($question->answers as $answer)
         <div class="checkbox">
             <label>
