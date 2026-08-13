@@ -29,7 +29,7 @@ Route::post('/login', [LoginController::class, 'store']);
 Route::get('/register', [RegisterController::class, 'index'])->name('register');
 Route::post('/register', [RegisterController::class, 'store']);
 
-Route::get('/logout', [LogoutController::class, 'logout'])->name('logout');
+Route::post('/logout', [LogoutController::class, 'logout'])->name('logout');
 
 Route::get('/profile', [ProfileController::class, 'index'])->middleware('auth')->name('profile');
 Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard');
