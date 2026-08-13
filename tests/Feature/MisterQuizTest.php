@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -84,7 +85,16 @@ class MisterQuizTest extends TestCase
         $this->get(route('quiz'))->assertRedirect(route('login'));
     }
 
-    public function testUnfinishedQuizKeepsTheSameQuestions()
+    public function testSeederPreservesTheCorrectAnswerWhenAnswersAreShuffled()
+    {
+        $question = Question::where('question', 'Which artist painted the Mona Lisa?')->firstOrFail();
+        $correctAnswer = $question->answers()->where('correct', true)->firstOrFail();
+
+        $this->assertSame('Leonardo da Vinci', $correctAnswer->answer);
+        $this->assertSame(1, $question->answers()->where('correct', true)->count());
+    }
+
+    public function testUnfinishedQuizKeepsTheSameQuestionsInTheSameOrder()
     {
         $user = User::factory()->create();
 
@@ -92,10 +102,11 @@ class MisterQuizTest extends TestCase
         $firstResponse->assertOk();
 
         $firstQuestions = $firstResponse->viewData('questions');
-        $firstIds = $firstQuestions->pluck('id')->sort()->values()->all();
+        $firstIds = $firstQuestions->pluck('id')->values()->all();
 
+        $this->assertCount(10, $firstQuestions);
         foreach (['Art', 'History', 'Geography', 'Science', 'Sports'] as $category) {
-            $this->assertGreaterThanOrEqual(1, $firstQuestions->where('category', $category)->count());
+            $this->assertSame(2, $firstQuestions->where('category', $category)->count());
         }
 
         $this->get(route('home'))->assertOk();
@@ -103,7 +114,7 @@ class MisterQuizTest extends TestCase
         $secondResponse = $this->get(route('quiz'));
         $secondResponse->assertOk();
 
-        $secondIds = $secondResponse->viewData('questions')->pluck('id')->sort()->values()->all();
+        $secondIds = $secondResponse->viewData('questions')->pluck('id')->values()->all();
 
         $this->assertSame($firstIds, $secondIds);
         $this->assertSame(1, Quiz::where('user_id', $user->id)->where('completed', false)->count());
@@ -165,7 +176,7 @@ class MisterQuizTest extends TestCase
             ->assertSee($questionCount . ' / ' . $questionCount);
     }
 
-    public function testCompletedQuizCannotAwardXpTwice()
+    public function testCompletedQuizRedirectsToResultsWithoutAwardingXpTwice()
     {
         $user = User::factory()->create();
         $this->actingAs($user)->get(route('quiz'));
@@ -179,7 +190,7 @@ class MisterQuizTest extends TestCase
         $xpAfterFirstSubmit = $user->fresh()->xp;
 
         $this->post(route('quiz.results', $quiz), ['answers' => $answers])
-            ->assertStatus(409);
+            ->assertRedirect(route('quiz.results.show', $quiz));
 
         $this->assertSame($xpAfterFirstSubmit, $user->fresh()->xp);
     }

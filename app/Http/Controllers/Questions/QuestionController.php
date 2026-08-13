@@ -63,7 +63,10 @@ class QuestionController extends Controller
     public function results(Request $request, Quiz $quiz)
     {
         abort_unless($quiz->user_id === $request->user()->id, 403);
-        abort_if($quiz->completed, 409, 'This quiz has already been submitted.');
+
+        if ($quiz->completed) {
+            return redirect()->route('quiz.results.show', $quiz);
+        }
 
         $questions = $quiz->getQuestions();
         $submittedAnswers = $request->input('answers', []);
@@ -106,7 +109,7 @@ class QuestionController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $quiz, $results, $totals, $xp) {
+        $submitted = DB::transaction(function () use ($request, $quiz, $results, $totals, $xp) {
             $claimed = Quiz::whereKey($quiz->id)
                 ->where('user_id', $request->user()->id)
                 ->where('completed', false)
@@ -120,7 +123,9 @@ class QuestionController extends Controller
                     'updated_at' => now(),
                 ]);
 
-            abort_if($claimed !== 1, 409, 'This quiz has already been submitted.');
+            if ($claimed !== 1) {
+                return false;
+            }
 
             $user = User::whereKey($request->user()->id)
                 ->lockForUpdate()
@@ -138,6 +143,8 @@ class QuestionController extends Controller
             }
 
             $user->save();
+
+            return true;
         });
 
         return redirect()->route('quiz.results.show', $quiz);
