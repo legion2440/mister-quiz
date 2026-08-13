@@ -61,6 +61,8 @@ class MisterQuizTest extends TestCase
             'password' => Hash::make('correct-password'),
         ]);
 
+        $this->get(route('quiz'))->assertRedirect(route('login'));
+
         $this->post(route('login'), [
             'email' => $user->email,
             'password' => 'wrong-password',
