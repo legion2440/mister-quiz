@@ -7,8 +7,9 @@ use App\Models\Answer;
 use App\Models\Question;
 use App\Models\Question_Quiz;
 use App\Models\Quiz;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class QuestionController extends Controller
 {
@@ -61,7 +62,8 @@ class QuestionController extends Controller
 
     public function results(Request $request, Quiz $quiz)
     {
-        abort_unless($quiz->user_id === $request->user()->id && ! $quiz->completed, 403);
+        abort_unless($quiz->user_id === $request->user()->id, 403);
+        abort_if($quiz->completed, 409, 'This quiz has already been submitted.');
 
         $questions = $quiz->getQuestions();
         $submittedAnswers = $request->input('answers', []);
@@ -71,13 +73,12 @@ class QuestionController extends Controller
         }
 
         $results = ['overall' => 0];
-        foreach (self::CATEGORIES as $category) {
-            $results[strtolower($category)] = 0;
-        }
-
         $totals = [];
+
         foreach (self::CATEGORIES as $category) {
-            $totals[strtolower($category)] = 0;
+            $key = strtolower($category);
+            $results[$key] = 0;
+            $totals[$key] = 0;
         }
 
         $xp = 0;
@@ -105,24 +106,52 @@ class QuestionController extends Controller
             }
         }
 
-        $user = Auth::user();
-        $user->xp += $xp;
+        DB::transaction(function () use ($request, $quiz, $results, $totals, $xp) {
+            $claimed = Quiz::whereKey($quiz->id)
+                ->where('user_id', $request->user()->id)
+                ->where('completed', false)
+                ->update([
+                    'completed' => true,
+                    'results' => json_encode([
+                        'results' => $results,
+                        'totals' => $totals,
+                    ], JSON_THROW_ON_ERROR),
+                    'xp_earned' => $xp,
+                    'updated_at' => now(),
+                ]);
 
-        foreach ($results as $key => $value) {
-            if ($key != 'overall') {
+            abort_if($claimed !== 1, 409, 'This quiz has already been submitted.');
+
+            $user = User::whereKey($request->user()->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $user->xp += $xp;
+
+            foreach ($results as $key => $value) {
+                if ($key === 'overall') {
+                    continue;
+                }
+
                 [$correct, $total] = explode('/', $user->{$key});
                 $user->{$key} = ((int) $correct + $value) . '/' . ((int) $total + $totals[$key]);
             }
-        }
 
-        $quiz->completed = true;
-        $user->save();
-        $quiz->save();
+            $user->save();
+        });
+
+        return redirect()->route('quiz.results.show', $quiz);
+    }
+
+    public function showResults(Request $request, Quiz $quiz)
+    {
+        abort_unless($quiz->user_id === $request->user()->id, 403);
+        abort_unless($quiz->completed && is_array($quiz->results), 404);
 
         return view('questions.results', [
-            'results' => $results,
-            'totals' => $totals,
-            'xp' => $xp,
+            'results' => $quiz->results['results'],
+            'totals' => $quiz->results['totals'],
+            'xp' => $quiz->xp_earned,
         ]);
     }
 }

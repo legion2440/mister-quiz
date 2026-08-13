@@ -9,7 +9,13 @@ class Quiz extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['completed', 'user_id', 'score'];
+    protected $fillable = ['completed', 'user_id', 'results', 'xp_earned'];
+
+    protected $casts = [
+        'completed' => 'boolean',
+        'results' => 'array',
+        'xp_earned' => 'integer',
+    ];
 
     public function questions()
     {

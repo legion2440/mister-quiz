@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-
 Route::get('/', function () {
     return view('home');
 })->name('home');
@@ -37,3 +36,4 @@ Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leade
 
 Route::get('/quiz', [QuestionController::class, 'index'])->middleware('auth')->name('quiz');
 Route::post('/quiz/{quiz}', [QuestionController::class, 'results'])->middleware('auth')->name('quiz.results');
+Route::get('/quiz/{quiz}/results', [QuestionController::class, 'showResults'])->middleware('auth')->name('quiz.results.show');
