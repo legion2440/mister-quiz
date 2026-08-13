@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class QuestionController extends Controller
 {
     private const CATEGORIES = ['Art', 'History', 'Geography', 'Science', 'Sports'];
-    private const QUESTIONS_PER_CATEGORY = 4;
+    private const QUESTIONS_PER_CATEGORY = 2;
 
     public function index(Request $request)
     {
@@ -52,7 +52,7 @@ class QuestionController extends Controller
             }
         }
 
-        $questions = $quiz->getQuestions()->shuffle();
+        $questions = $quiz->getQuestions();
 
         return view('questions.list', [
             'quiz' => $quiz,

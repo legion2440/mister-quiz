@@ -57,10 +57,20 @@ class DatabaseSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
+                $answerRows = [];
                 foreach ($answers as $index => $answer) {
-                    DB::table('answer')->insert([
+                    $answerRows[] = [
                         'answer' => $answer,
                         'correct' => $index === 0,
+                    ];
+                }
+
+                shuffle($answerRows);
+
+                foreach ($answerRows as $answerRow) {
+                    DB::table('answer')->insert([
+                        'answer' => $answerRow['answer'],
+                        'correct' => $answerRow['correct'],
                         'question_id' => $questionId,
                         'created_at' => now(),
                         'updated_at' => now(),
