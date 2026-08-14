@@ -151,3 +151,7 @@ php artisan serve --port=8001
 ```bash
 php artisan test
 ```
+
+## Авторы
+Yerkanat Nurmakhanov (@ynurmakh)
+Nazar Yestayev (@nyestaye)
