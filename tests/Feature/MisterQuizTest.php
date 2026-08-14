@@ -86,6 +86,26 @@ class MisterQuizTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function testRegistrationRejectsDuplicateUsername()
+    {
+        User::factory()->create([
+            'username' => 'same-player',
+            'email' => 'first@example.com',
+        ]);
+
+        $this->post(route('register'), [
+            'username' => 'same-player',
+            'email' => 'second@example.com',
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
+        ])->assertSessionHasErrors('username');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', [
+            'email' => 'second@example.com',
+        ]);
+    }
+
     public function testGuestCannotStartAQuiz()
     {
         $this->get(route('quiz'))->assertRedirect(route('login'));
